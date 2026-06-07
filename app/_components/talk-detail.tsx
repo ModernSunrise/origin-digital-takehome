@@ -10,6 +10,7 @@ import { useToast } from './toast';
 import { Banner } from './dashboard';
 import { CapacityMeter, StatusBadge, buttonStyles } from './ui';
 import { formatWhen, friendlyError, talkFileName, talkStatus } from './talk-utils';
+import { Walkthrough } from './walkthrough';
 
 export function TalkDetail({ id }: { id: string }): React.ReactElement {
   const { userId } = useCurrentUser();
@@ -142,6 +143,8 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
           </Link>
         </aside>
       </div>
+
+      <Walkthrough event={event} />
     </div>
   );
 }

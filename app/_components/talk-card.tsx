@@ -8,6 +8,7 @@ import { useCurrentUser } from './current-user';
 import { useToast } from './toast';
 import { CapacityMeter, StatusBadge, buttonStyles } from './ui';
 import { formatWhen, friendlyError, talkFileName, talkStatus } from './talk-utils';
+import { chapterOrderFor } from '@/app/_content/talks';
 
 export function TalkCard({
   event,
@@ -19,6 +20,7 @@ export function TalkCard({
   index?: number;
 }): React.ReactElement {
   const status = talkStatus(event);
+  const chapter = chapterOrderFor(event.title);
   const { userId } = useCurrentUser();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -42,7 +44,14 @@ export function TalkCard({
       style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
-        <span className="font-mono text-[11px] text-faint">{formatWhen(event.date)}</span>
+        <span className="flex items-center gap-2 font-mono text-[11px] text-faint">
+          {chapter !== null ? (
+            <span className="rounded border border-accent/30 px-1 text-accent">
+              ch.{String(chapter).padStart(2, '0')}
+            </span>
+          ) : null}
+          {formatWhen(event.date)}
+        </span>
         <StatusBadge status={status} />
       </div>
 

@@ -5,9 +5,9 @@ registrations. Built as a take-home exercise for Origin Digital.
 
 > **For reviewers:** a clean Next.js app — in-memory store, the three business rules
 > enforced in a pure service layer with unit tests, and a polished UI. Run it with
-> `npm install && npm run dev`. Everything past the core (an MCP server, design docs, an
-> Azure productionization plan) is clearly labeled **[Beyond the brief]** so you can skip
-> straight to what the exercise asks for.
+> `npm install && npm run dev`. Everything past the core (a guided walkthrough, an MCP
+> server, design docs, an Azure productionization plan) is clearly labeled
+> **[Beyond the brief]** so you can skip straight to what the exercise asks for.
 
 ## Quick start
 
@@ -18,7 +18,9 @@ npm install
 npm run dev          # http://localhost:3000  — frontend + REST API
 ```
 
-The app seeds a few demo talks on first load, so it's usable immediately.
+On first load the app seeds five talks that double as a **guided walkthrough** of how it
+was built — open any one to read its chapter (see [Beyond the brief](#a-guided-walkthrough--the-app-presents-itself)).
+Creating and managing your own talks is fully functional too.
 
 ```bash
 npm test             # unit tests for the business logic (Vitest)
@@ -118,6 +120,15 @@ docs/            design docs: requirements, constraints, assumptions, architectu
 
 The exercise asks for a REST API + UI + tests. The items below go further. They're
 deliberate, and I'm happy to walk through them.
+
+### A guided walkthrough — the app presents itself
+
+The five seeded talks are the chapters of a short walkthrough of how this was built — my
+workflow, the context-engineering system, the app and how it meets the brief, the MCP
+layer, and where I'd take it next. Open any talk and the chapter renders below the attendee
+list, with prev / next navigation. It's presentation material keyed to each talk by a slug
+(in [`app/_content/`](./app/_content)); the domain model, services, and the 32 tests are
+untouched by it.
 
 ### An MCP server — one rule-set, two consumers
 

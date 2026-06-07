@@ -1,9 +1,10 @@
-// Demo seed for the DevHub frontend. Idempotent — only seeds an empty store. Runs once on
-// server boot via the root instrumentation.ts. Goes through the SAME services as everything
+// Demo seed for the DevHub frontend. Idempotent — only seeds an empty store. Seeded lazily
+// via ensureSeeded() from the route handlers. Goes through the SAME services as everything
 // else (no direct store writes), so the seeded data obeys every business rule.
 //
-// Chosen to make every state visible on first load: an OPEN talk you're already in, a
-// SOLD OUT talk (R2), an ENDED talk (R1), and seats to take.
+// The four talks are the chapters of the interview walkthrough (see app/_content/talks.tsx).
+// Their titles are the join key to that content via talkFileName(), and ascending dates make
+// the dashboard list them as chapters 1..4. Keep the titles in sync with the content module.
 
 import { createEvent } from './event-service';
 import { register } from './registration-service';
@@ -32,56 +33,66 @@ export function ensureSeeded(): Promise<void> {
 export async function seedStore(): Promise<void> {
   if ((await findAllEvents()).length > 0) return; // already seeded
 
-  const rag = await createEvent({
-    title: 'Intro to RAG on Azure',
+  const ch1 = await createEvent({
+    title: 'How I Began — My Workflow',
     description:
-      'Retrieval-augmented generation end to end on Azure AI Search + Azure OpenAI — chunking, embeddings, and grounding answers in your own docs.',
+      'A fresh Claude Desktop chat seeded with the interview brief and the take-home — extracting Requirements, Constraints, and Assumptions, then writing the handoff prompt for Claude Code.',
     date: at(2, 12, 0),
     maxCapacity: 40,
   });
 
-  const mcp = await createEvent({
-    title: 'Building MCP Servers',
+  const ch2 = await createEvent({
+    title: 'My Context System — Design & Methodology',
     description:
-      'One rule-set, two consumers. How we exposed the same domain layer over both HTTP and the Model Context Protocol so an agent and a browser hit identical business logic.',
-    date: at(4, 12, 30),
-    maxCapacity: 30,
-  });
-
-  const bicep = await createEvent({
-    title: 'Bicep & Infrastructure-as-Code',
-    description:
-      'Declarative Azure infra with Bicep modules, what-if deployments, and wiring it all into CI/CD. Hands-on — bring a laptop.',
+      'The three-layer context-engineering schema: a lean index (CLAUDE.md), path-filtered rules, and on-demand deep context plus skills.',
     date: at(3, 12, 0),
-    maxCapacity: 12,
-  });
-
-  const cosmos = await createEvent({
-    title: 'Cosmos DB Data Modeling',
-    description:
-      'Partition keys, single-table patterns, and modeling for scale. When to embed, when to reference, and how to not get throttled.',
-    date: at(9, 12, 0),
-    maxCapacity: 25,
-  });
-
-  await createEvent({
-    title: 'Context Engineering 101',
-    description:
-      'The talk that started it all — designing the information architecture around AI interactions. (Recording in the wiki.)',
-    date: at(-5, 12, 0),
     maxCapacity: 40,
   });
 
-  // Fill Bicep to capacity -> SOLD OUT (demonstrates R2 on first load).
-  for (let i = 1; i <= bicep.maxCapacity; i += 1) {
-    await register(bicep.id, `dev${i}@devhub.io`);
+  const ch3 = await createEvent({
+    title: 'The App — How It Meets the Requirements',
+    description:
+      'A pure domain/service layer with thin handlers over an in-memory store, the three business rules, 32 tests, and this DevHub frontend.',
+    date: at(4, 12, 0),
+    maxCapacity: 8, // small on purpose: the capacity rule is demoable live in this chapter
+  });
+
+  const ch4 = await createEvent({
+    title: 'The MCP Server Layer',
+    description:
+      'One rule-set, two consumers: the same services and shared Zod schemas exposed as seven MCP tools over stdio.',
+    date: at(5, 12, 0),
+    maxCapacity: 30,
+  });
+
+  const ch5 = await createEvent({
+    title: 'Where It Goes Next — Production & Roadmap',
+    description:
+      'The deliberate seams — the async store, the userId string, the excluded delete — and the concrete next steps: Cosmos DB, horizontal scale, Entra ID, soft-cancel, and observability on Azure.',
+    date: at(6, 12, 0),
+    maxCapacity: 40,
+  });
+
+  // Realistic attendee lists on the meta chapters.
+  for (const name of ['priya', 'sam', 'lee', 'mei']) {
+    await register(ch1.id, `${name}@devhub.io`);
+  }
+  for (const name of ['priya', 'sam', 'noah']) {
+    await register(ch2.id, `${name}@devhub.io`);
+  }
+  for (const name of ['priya', 'sam', 'lee', 'noah']) {
+    await register(ch4.id, `${name}@devhub.io`);
+  }
+  for (const name of ['priya', 'noah', 'mei']) {
+    await register(ch5.id, `${name}@devhub.io`);
   }
 
-  // Seats elsewhere, including the demo user (so "you have a seat" + unregister are demoable).
-  await register(rag.id, DEMO_USER);
-  await register(rag.id, 'priya@devhub.io');
-  await register(mcp.id, DEMO_USER);
-  await register(mcp.id, 'sam@devhub.io');
-  await register(mcp.id, 'lee@devhub.io');
-  await register(cosmos.id, 'priya@devhub.io');
+  // Chapter 3 is the live rules playground: the demo user already holds a seat (duplicate rule
+  // fires on "save seat", and unregister works), and it sits at 7/8 — switch the attendee in
+  // the header to take the last seat, then once more to hit capacity (SOLD OUT). Editing the
+  // date to the past makes the past-event rule demoable too.
+  await register(ch3.id, DEMO_USER);
+  for (let i = 1; i <= 6; i += 1) {
+    await register(ch3.id, `dev${i}@devhub.io`);
+  }
 }
