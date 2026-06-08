@@ -147,7 +147,9 @@ Tools: `create_event`, `list_events`, `get_event`, `update_event`, `register_for
 `unregister_from_event`, `list_event_registrations`. Design notes:
 [`.claude/core-context/mcp-server.md`](./.claude/core-context/mcp-server.md).
 
-<img width="1713" height="1322" alt="Screenshot 2026-06-07 at 6 09 05 PM" src="https://github.com/user-attachments/assets/6e0fdd33-0b19-4266-bf42-2143ec6c7035" />
+
+https://github.com/user-attachments/assets/90b97074-c9fe-4c88-939a-a8df27f75606
+
 
 ### In-memory by design, and productionizing on Azure
 
