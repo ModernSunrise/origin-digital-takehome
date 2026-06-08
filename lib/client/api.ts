@@ -1,4 +1,4 @@
-// Typed browser client for the DevHub REST API. The frontend consumes the SAME HTTP API
+// Typed browser client for the Greenroom REST API. The frontend consumes the SAME HTTP API
 // documented in domain-model.md (it does not reach into the domain layer directly).
 // Error bodies ({ error: { code, message } }) become a typed ApiError the UI can branch on.
 

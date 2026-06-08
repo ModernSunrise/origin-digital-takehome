@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useState } from 'react';
+import { AlertCircle, CheckCircle, X } from 'lucide-react';
 
 type Variant = 'info' | 'success' | 'error';
 type Toast = { id: number; message: string; variant: Variant };
@@ -9,10 +10,10 @@ type Push = (message: string, variant?: Variant) => void;
 const Ctx = createContext<Push | null>(null);
 let seq = 0;
 
-const VARIANT: Record<Variant, { cls: string; glyph: string }> = {
-  info: { cls: 'border-edge text-muted', glyph: '›' },
-  success: { cls: 'border-accent/45 text-accent', glyph: '✓' },
-  error: { cls: 'border-danger/45 text-danger', glyph: '✗' },
+const ICON: Record<Variant, React.ReactNode> = {
+  success: <CheckCircle size={16} strokeWidth={2.2} />,
+  error: <X size={16} strokeWidth={2.2} />,
+  info: <AlertCircle size={16} strokeWidth={2.2} />,
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -27,22 +28,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
   return (
     <Ctx.Provider value={push}>
       {children}
-      {/* Live region: every save/release and business-rule rejection is announced to AT. */}
       <div
-        role="status"
         aria-live="polite"
-        aria-atomic="false"
-        className="pointer-events-none fixed bottom-5 right-5 z-50 flex w-80 max-w-[calc(100vw-2.5rem)] flex-col gap-2"
+        role="status"
+        className="pointer-events-none fixed bottom-5 right-5 z-[60] flex w-[340px] max-w-[calc(100vw-40px)] flex-col gap-2.5"
       >
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`fade-up pointer-events-auto rounded-md border bg-panel/95 px-3.5 py-2.5 font-mono text-xs shadow-xl shadow-black/40 ${VARIANT[t.variant].cls}`}
-          >
-            <span className="mr-1.5 opacity-70" aria-hidden>
-              {VARIANT[t.variant].glyph}
+          <div key={t.id} className={`dh-toast dh-toast--${t.variant} pointer-events-auto`}>
+            <span className="dh-toast__icon" aria-hidden>
+              {ICON[t.variant]}
             </span>
-            {t.message}
+            <span>{t.message}</span>
           </div>
         ))}
       </div>

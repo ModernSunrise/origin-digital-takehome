@@ -2,35 +2,35 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { EventView } from '@/lib/domain/types';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { ArrowRight, Calendar, CheckCircle, Plus } from 'lucide-react';
+import type { EventView, Registration } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { useCurrentUser } from './current-user';
 import { useToast } from './toast';
-import { CapacityMeter, StatusBadge, buttonStyles } from './ui';
-import { formatWhen, friendlyError, talkFileName, talkStatus } from './talk-utils';
+import { CapacityMeter, ChapterChip, StatusBadge } from './ui';
+import { formatWhen, friendlyError, talkStatus } from './talk-utils';
 import { chapterOrderFor } from '@/app/_content/talks';
 
-export function TalkCard({
-  event,
-  onChanged,
-  index = 0,
-}: {
-  event: EventView;
-  onChanged?: () => void;
-  index?: number;
-}): React.ReactElement {
+export function TalkCard({ event }: { event: EventView }): React.ReactElement {
   const status = talkStatus(event);
+  const past = status === 'PAST';
   const chapter = chapterOrderFor(event.title);
   const { userId } = useCurrentUser();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
-  async function saveSeat() {
+  const { data: regs } = useSWR<Registration[]>(['regs', event.id], () =>
+    api.listRegistrations(event.id),
+  );
+  const mySeat = regs?.some((r) => r.userId === userId) ?? false;
+
+  async function saveSeat(): Promise<void> {
     setBusy(true);
     try {
       await api.register(event.id, userId);
       toast(`Seat saved — see you at “${event.title}”.`, 'success');
-      onChanged?.();
+      await Promise.all([globalMutate(['regs', event.id]), globalMutate('events')]);
     } catch (err) {
       toast(friendlyError(err), 'error');
     } finally {
@@ -40,55 +40,57 @@ export function TalkCard({
 
   return (
     <article
-      className="fade-up flex flex-col rounded-lg border border-line bg-panel p-4 transition-colors hover:border-edge"
-      style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
+      className={`dh-card ${past ? '' : 'dh-card--interactive'} flex flex-col`}
+      style={{ opacity: past ? 0.62 : 1 }}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <span className="flex items-center gap-2 font-mono text-[11px] text-faint">
-          {chapter !== null ? (
-            <span className="rounded border border-accent/30 px-1 text-accent">
-              ch.{String(chapter).padStart(2, '0')}
+      <div className="dh-card__body flex flex-1 flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <span className="inline-flex min-w-0 items-center gap-[7px] overflow-hidden text-sm text-muted">
+            <Calendar size={14} className="flex-none text-faint" />
+            <span className="num truncate">{formatWhen(event.date)}</span>
+          </span>
+          <StatusBadge status={status} />
+        </div>
+
+        <h3 className="t-h3 mt-3.5">
+          <Link href={`/events/${event.id}`} className="text-ink transition-colors hover:text-accent">
+            {event.title}
+          </Link>
+        </h3>
+
+        {chapter !== null ? (
+          <div className="mt-2.5">
+            <ChapterChip order={chapter} />
+          </div>
+        ) : null}
+
+        {event.description ? (
+          <p className="mt-2.5 line-clamp-2 text-sm leading-normal text-muted">{event.description}</p>
+        ) : null}
+
+        <CapacityMeter count={event.registrationCount} max={event.maxCapacity} className="mt-[18px]" />
+
+        <div className="mt-[18px] flex items-center gap-2.5">
+          {mySeat ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+              <CheckCircle size={16} strokeWidth={2} />
+              You’re in
             </span>
-          ) : null}
-          {formatWhen(event.date)}
-        </span>
-        <StatusBadge status={status} />
-      </div>
-
-      <Link
-        href={`/events/${event.id}`}
-        aria-label={`Open ${event.title}`}
-        className="w-fit font-mono text-[12px] text-accent/80 transition-colors hover:text-accent"
-      >
-        {talkFileName(event.title)}
-      </Link>
-      <h3 className="mt-1 text-[17px] font-semibold leading-snug text-ink">
-        <Link
-          href={`/events/${event.id}`}
-          className="underline-offset-4 decoration-edge hover:underline"
-        >
-          {event.title}
-        </Link>
-      </h3>
-      {event.description ? (
-        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">{event.description}</p>
-      ) : null}
-
-      <CapacityMeter count={event.registrationCount} max={event.maxCapacity} className="mt-4" />
-
-      <div className="mt-4 flex items-center gap-2">
-        {status === 'OPEN' ? (
-          <button onClick={saveSeat} disabled={busy} className={buttonStyles('accent', 'sm')}>
-            {busy ? 'saving…' : '+ save seat'}
-          </button>
-        ) : (
-          <button disabled className={buttonStyles('ghost', 'sm')}>
-            {status === 'SOLD_OUT' ? 'sold out' : 'ended'}
-          </button>
-        )}
-        <Link href={`/events/${event.id}`} className={buttonStyles('ghost', 'sm')}>
-          details <span aria-hidden>→</span>
-        </Link>
+          ) : status === 'OPEN' ? (
+            <button className="dh-btn dh-btn--sm dh-btn--primary" disabled={busy} onClick={saveSeat}>
+              <Plus size={15} strokeWidth={2.4} />
+              {busy ? 'Saving…' : 'Save my seat'}
+            </button>
+          ) : (
+            <button className="dh-btn dh-btn--sm dh-btn--secondary" disabled>
+              {status === 'FULL' ? 'Full' : 'Registration closed'}
+            </button>
+          )}
+          <Link href={`/events/${event.id}`} className="dh-btn dh-btn--sm dh-btn--ghost ml-auto">
+            Details
+            <ArrowRight size={15} />
+          </Link>
+        </div>
       </div>
     </article>
   );

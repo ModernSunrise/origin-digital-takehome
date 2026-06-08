@@ -1,12 +1,12 @@
 import type { EventView } from '@/lib/domain/types';
 import { ApiError } from '@/lib/client/api';
 
-export type TalkStatus = 'OPEN' | 'SOLD_OUT' | 'ENDED';
+export type TalkStatus = 'OPEN' | 'FULL' | 'PAST';
 
-/** Derive the product-facing status. ENDED (past) takes precedence over SOLD_OUT. */
+/** Product-facing status. PAST (already started) takes precedence over FULL. */
 export function talkStatus(event: EventView, now: number = Date.now()): TalkStatus {
-  if (new Date(event.date).getTime() < now) return 'ENDED';
-  if (event.availableCapacity <= 0) return 'SOLD_OUT';
+  if (new Date(event.date).getTime() < now) return 'PAST';
+  if (event.availableCapacity <= 0) return 'FULL';
   return 'OPEN';
 }
 
@@ -28,18 +28,30 @@ export function formatWhen(iso: string): string {
   return WHEN.format(new Date(iso));
 }
 
-/** Turn a title into an IDE-style filename, e.g. "Building MCP Servers" -> "building-mcp-servers.talk". */
+const RELATIVE = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
+
+/** A short relative time, e.g. "in 2 days" / "3 hours ago". */
+export function relativeTime(iso: string, now: number = Date.now()): string {
+  const diffMs = new Date(iso).getTime() - now;
+  const days = Math.round(diffMs / 86_400_000);
+  if (Math.abs(days) >= 1) return RELATIVE.format(days, 'day');
+  const hours = Math.round(diffMs / 3_600_000);
+  if (Math.abs(hours) >= 1) return RELATIVE.format(hours, 'hour');
+  return RELATIVE.format(Math.round(diffMs / 60_000), 'minute');
+}
+
+/** Slug used to join a talk to its walkthrough chapter content (internal). */
 export function talkFileName(title: string): string {
-  const slug =
+  return (
     title
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'untitled';
-  return `${slug}.talk`;
+      .replace(/^-+|-+$/g, '') || 'untitled'
+  );
 }
 
-/** Map an ApiError code to a human, product-voice message (the business rules as copy). */
+/** Map an ApiError code to a human, product-voice message. */
 export function friendlyError(err: unknown): string {
   if (err instanceof ApiError) {
     switch (err.code) {

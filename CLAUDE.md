@@ -18,13 +18,14 @@ Next.js (App Router) · TypeScript (`strict`) · Zod (boundary validation) · Vi
 `@modelcontextprotocol/sdk`. Single repo, **single process**, **in-memory** storage by
 design. Auth is out of scope.
 
-**Theme:** [DevHub](./docs/theme.md) — an internal tech-talk hub, developer-tool-dark UI.
-A presentation skin over the generic events core; domain/API/tool names are unchanged.
+**Theme:** [Greenroom](./docs/theme.md) — an internal tech-talk hub, reskinned in Origin
+Digital's brand language: a warm **light** theme (light-only — no dark mode or theme
+toggle), one earned neon-lime accent, Space Grotesk + Newsreader, lucide icons. A
+presentation skin over the generic events core; domain/API/tool names are unchanged.
 
 ## Commands
 
-These are the project's intended npm scripts; they are wired into `package.json` at
-scaffold time (the app is not built yet — see _Status_).
+These are the project's npm scripts, wired into `package.json`.
 
 | Command | Purpose |
 | --- | --- |
@@ -122,7 +123,9 @@ consumers and the tables in `domain-model.md` in the same change.
 
 ## Status
 
-Context system complete and **theme defined** ([DevHub](./docs/theme.md),
-developer-tool-dark); **application code not yet scaffolded.** The root `README.md` (with
-the in-memory → Azure Cosmos DB / Container Apps / CI-CD / Entra ID productionization
-narrative) and the implementation plan are authored at scaffold time, not in this phase.
+Context system complete, theme defined ([Greenroom](./docs/theme.md)), and the application
+**built**: the pure domain layer, the REST + MCP consumers, the 32 service tests, and the
+front-end — reskinned into Origin Digital's **light** brand language (light-only; the dark
+theme and theme toggle were dropped — see [ADR-007](./docs/decisions.md)). The root
+`README.md` carries the in-memory → Azure Cosmos DB / Container Apps / CI-CD / Entra ID
+productionization narrative.

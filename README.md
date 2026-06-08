@@ -1,4 +1,4 @@
-# DevHub — Event Management API & UI
+# Greenroom — Event Management API & UI
 
 A REST API and web app for scheduling internal tech talks and managing seat
 registrations. Built as a take-home exercise for Origin Digital.

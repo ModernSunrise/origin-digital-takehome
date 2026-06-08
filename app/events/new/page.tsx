@@ -1,5 +1,7 @@
-import { TalkForm } from '@/app/_components/talk-form';
+import { redirect } from 'next/navigation';
 
-export default function NewTalkPage(): React.ReactElement {
-  return <TalkForm mode="create" />;
+// Create is now an in-app modal (opened from the header / empty state). Keep this URL
+// working for deep links by sending it home, where "Create talk" lives.
+export default function NewTalkPage(): never {
+  redirect('/');
 }

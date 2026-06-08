@@ -1,50 +1,39 @@
 'use client';
 
-import Link from 'next/link';
 import useSWR from 'swr';
+import { AlertCircle, Inbox, Plus } from 'lucide-react';
 import type { EventView } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { TalkCard } from './talk-card';
-import { buttonStyles } from './ui';
+import { useTalkForm } from './talk-form-modal';
 import { isUpcomingThisWeek, talkStatus } from './talk-utils';
 
 export function Dashboard(): React.ReactElement {
-  const { data: events, error, isLoading, mutate } = useSWR<EventView[]>('events', () =>
-    api.listEvents(),
-  );
+  const { data: events, error, isLoading } = useSWR<EventView[]>('events', () => api.listEvents());
+  const { openCreate } = useTalkForm();
 
-  if (error) {
-    return (
-      <Banner
-        glyph="✗"
-        tone="danger"
-        message="Could not load talks — is the dev server running?"
-        action={{ label: 'retry', onClick: () => void mutate() }}
-      />
-    );
-  }
+  if (error) return <Banner message="Could not load talks — is the dev server running?" />;
   if (isLoading || !events) return <Skeleton />;
-  if (events.length === 0) return <EmptyState />;
+  if (events.length === 0) return <EmptyState onCreate={openCreate} />;
 
-  const reload = (): void => void mutate();
-
-  const thisWeek = events.filter((e) => isUpcomingThisWeek(e)).sort(byDateAsc);
-  const thisWeekIds = new Set(thisWeek.map((e) => e.id));
-  const rest = events.filter((e) => !thisWeekIds.has(e.id)).sort(byUpcomingThenEnded);
+  const week = events.filter((e) => isUpcomingThisWeek(e)).sort(byDateAsc);
+  const weekIds = new Set(week.map((e) => e.id));
+  const rest = events.filter((e) => !weekIds.has(e.id)).sort(byUpcomingThenPast);
 
   return (
-    <div className="space-y-12">
-      {thisWeek.length > 0 && (
-        <Section name="this_week" count={thisWeek.length} label={`This week — ${thisWeek.length} talks`}>
-          {thisWeek.map((e, i) => (
-            <TalkCard key={e.id} event={e} index={i} onChanged={reload} />
+    <div>
+      <Hero total={events.length} week={week.length} />
+      {week.length > 0 && (
+        <Section title="This week" count={week.length}>
+          {week.map((e) => (
+            <TalkCard key={e.id} event={e} />
           ))}
         </Section>
       )}
       {rest.length > 0 && (
-        <Section name="all_talks" count={rest.length} label={`All talks — ${rest.length}`}>
-          {rest.map((e, i) => (
-            <TalkCard key={e.id} event={e} index={i} onChanged={reload} />
+        <Section title="All talks" count={rest.length}>
+          {rest.map((e) => (
+            <TalkCard key={e.id} event={e} />
           ))}
         </Section>
       )}
@@ -52,102 +41,125 @@ export function Dashboard(): React.ReactElement {
   );
 }
 
-// Time logic stays in the helpers (talk-utils) so the render path itself is pure.
 function byDateAsc(a: EventView, b: EventView): number {
   return new Date(a.date).getTime() - new Date(b.date).getTime();
 }
 
-function byUpcomingThenEnded(a: EventView, b: EventView): number {
-  const aEnded = talkStatus(a) === 'ENDED';
-  const bEnded = talkStatus(b) === 'ENDED';
-  if (aEnded !== bEnded) return aEnded ? 1 : -1; // ended sinks to the bottom
+function byUpcomingThenPast(a: EventView, b: EventView): number {
+  const ap = talkStatus(a) === 'PAST';
+  const bp = talkStatus(b) === 'PAST';
+  if (ap !== bp) return ap ? 1 : -1;
   const at = new Date(a.date).getTime();
   const bt = new Date(b.date).getTime();
-  return aEnded ? bt - at : at - bt; // upcoming ascending, ended most-recent first
+  return ap ? bt - at : at - bt;
+}
+
+const GRID = { gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' } as const;
+
+function Hero({ total, week }: { total: number; week: number }): React.ReactElement {
+  return (
+    <div
+      className="organic-gradient mt-2 overflow-hidden border border-line"
+      style={{ borderRadius: 'var(--radius-xl)', padding: '38px 40px' }}
+    >
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <h1 className="t-h1 text-ink">Talks</h1>
+          <p className="t-body-lg mt-2 text-muted">Tech talks worth a lunch break.</p>
+        </div>
+        <div className="num flex gap-7">
+          <Stat n={total} label="scheduled" />
+          <Stat n={week} label="this week" accent />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ n, label, accent = false }: { n: number; label: string; accent?: boolean }): React.ReactElement {
+  return (
+    <div className="text-right">
+      <div
+        className="text-[30px] font-bold tracking-[-0.02em]"
+        style={{ color: accent ? 'var(--accent-ink)' : 'var(--foreground)' }}
+      >
+        {n}
+      </div>
+      <div className="t-label mt-0.5 text-faint">{label}</div>
+    </div>
+  );
 }
 
 function Section({
-  name,
+  title,
   count,
-  label,
   children,
 }: {
-  name: string;
+  title: string;
   count: number;
-  label: string;
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <section>
-      <h2 className="mb-4 flex items-baseline gap-2 font-mono text-sm" aria-label={label}>
-        <span className="text-accent">{name}</span>
-        <span className="text-faint" aria-hidden>
-          ()
-        </span>
-        <span className="text-faint" aria-hidden>
-          — {count}
-        </span>
-      </h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    <section className="mt-10">
+      <div className="mb-4 flex items-baseline gap-2.5">
+        <h2 className="t-h2 text-ink">{title}</h2>
+        <span className="num text-[length:var(--fs-body)] text-faint">{count}</span>
+      </div>
+      <div className="grid gap-[18px]" style={GRID}>
+        {children}
+      </div>
     </section>
   );
 }
 
 function Skeleton(): React.ReactElement {
   return (
-    <div>
-      <div className="mb-4 h-4 w-32 rounded bg-panel" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-10">
+      <div className="mb-4 h-[26px] w-[150px] rounded-md bg-panel" />
+      <div className="grid gap-[18px]" style={GRID}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-52 animate-pulse rounded-lg border border-line bg-panel" />
+          <div key={i} className="dh-card" style={{ height: 232, opacity: 0.7 }}>
+            <div className="dh-card__body flex flex-col gap-3.5">
+              <div className="h-3.5 w-[55%] rounded bg-raised" />
+              <div className="h-5 w-[80%] rounded bg-raised" />
+              <div className="h-8 w-full rounded bg-raised" />
+              <div className="mt-auto h-1.5 w-full rounded-full bg-raised" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function EmptyState(): React.ReactElement {
+function EmptyState({ onCreate }: { onCreate: () => void }): React.ReactElement {
   return (
-    <div className="rounded-lg border border-dashed border-line bg-panel/50 p-12 text-center">
-      <p className="font-mono text-sm text-muted">no talks scheduled yet</p>
-      <p className="mx-auto mt-1 max-w-sm text-sm text-faint">
+    <div
+      className="mt-10 rounded-[var(--radius-lg)] border border-dashed border-edge bg-subtle text-center"
+      style={{ padding: '56px 24px' }}
+    >
+      <span className="inline-flex text-faint">
+        <Inbox size={34} strokeWidth={1.5} />
+      </span>
+      <h3 className="t-h3 mt-4 text-ink">No talks scheduled yet</h3>
+      <p className="mx-auto mt-1.5 max-w-[360px] text-sm text-muted">
         Schedule the first lunch-and-learn and people can start saving seats.
       </p>
-      <Link href="/events/new" className={`mt-5 ${buttonStyles('accent', 'md')}`}>
-        <span aria-hidden>▸</span> new talk
-      </Link>
+      <div className="mt-5 flex justify-center">
+        <button className="dh-btn dh-btn--md dh-btn--primary" onClick={onCreate}>
+          <Plus size={17} strokeWidth={2.4} />
+          Create talk
+        </button>
+      </div>
     </div>
   );
 }
 
-export function Banner({
-  glyph,
-  tone,
-  message,
-  action,
-}: {
-  glyph: string;
-  tone: 'danger' | 'muted';
-  message: string;
-  action?: { label: string; onClick: () => void };
-}): React.ReactElement {
-  const toneCls = tone === 'danger' ? 'border-danger/40 text-danger' : 'border-line text-muted';
+export function Banner({ message }: { message: string }): React.ReactElement {
   return (
-    <div
-      role="alert"
-      className={`flex items-center justify-between gap-4 rounded-lg border bg-panel p-4 font-mono text-sm ${toneCls}`}
-    >
-      <span>
-        <span className="mr-2 opacity-70" aria-hidden>
-          {glyph}
-        </span>
-        {message}
-      </span>
-      {action && (
-        <button onClick={action.onClick} className={buttonStyles('ghost', 'sm')}>
-          {action.label}
-        </button>
-      )}
+    <div className="dh-alert dh-alert--danger mt-10" role="alert">
+      <AlertCircle size={18} className="dh-alert__icon" />
+      <span>{message}</span>
     </div>
   );
 }

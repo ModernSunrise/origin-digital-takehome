@@ -1,42 +1,43 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { Space_Grotesk, Newsreader } from 'next/font/google';
 import './globals.css';
 import { CurrentUserProvider } from './_components/current-user';
-import { SiteHeader } from './_components/site-header';
 import { ToastProvider } from './_components/toast';
+import { TalkFormProvider } from './_components/talk-form-modal';
+import { SiteHeader } from './_components/site-header';
 
-const mono = JetBrains_Mono({
-  variable: '--font-jetbrains-mono',
+const sans = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  weight: ['400', '500', '600', '700'],
 });
 
-const sans = IBM_Plex_Sans({
-  variable: '--font-plex-sans',
+const serif = Newsreader({
+  variable: '--font-newsreader',
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500'],
+  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
-  title: 'DevHub — tech talks worth a lunch break',
-  description: 'Internal tech-talk & lunch-and-learn hub. Save your seat at the next talk.',
+  title: 'Greenroom — tech talks worth a lunch break',
+  description: 'Schedule internal tech talks and manage seat registrations.',
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>): React.ReactElement {
   return (
-    <html lang="en" className={`${mono.variable} ${sans.variable} h-full antialiased`}>
-      <body className="min-h-full">
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+      <body className="antialiased">
         <CurrentUserProvider>
           <ToastProvider>
-            <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 sm:px-8">
-              <SiteHeader />
-              <main className="flex-1 pb-24">{children}</main>
-              <footer className="border-t border-line py-6 font-mono text-xs text-faint">
-                devhub · in-memory by design · one rule-set, two consumers (HTTP + MCP)
-              </footer>
-            </div>
+            <TalkFormProvider>
+              <div className="mx-auto max-w-[var(--container-max)] px-[var(--gutter)] pb-24">
+                <SiteHeader />
+                <main>{children}</main>
+              </div>
+            </TalkFormProvider>
           </ToastProvider>
         </CurrentUserProvider>
       </body>

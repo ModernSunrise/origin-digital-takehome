@@ -2,33 +2,41 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Pencil, Plus } from 'lucide-react';
 import { useCurrentUser } from './current-user';
-import { buttonStyles } from './ui';
+import { useTalkForm } from './talk-form-modal';
 
 export function SiteHeader(): React.ReactElement {
+  const { openCreate } = useTalkForm();
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 py-5">
-      <Link href="/" className="flex items-center gap-2.5" aria-label="DevHub home">
-        <span
-          className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_2px_var(--color-accent)]"
-          aria-hidden
-        />
-        <span className="font-mono text-[15px] font-bold tracking-tight text-ink">devhub</span>
-        <span className="hidden font-mono text-xs text-faint sm:inline" aria-hidden>
-          ~/talks
-        </span>
-      </Link>
+    <header className="flex flex-wrap items-center justify-between gap-4 py-[18px]">
+      <Wordmark />
       <div className="flex items-center gap-2.5">
-        <CurrentUserChip />
-        <Link href="/events/new" className={buttonStyles('accent', 'md')}>
-          <span aria-hidden>▸</span> new talk
-        </Link>
+        <UserChip />
+        <button className="dh-btn dh-btn--primary dh-btn--md" onClick={openCreate}>
+          <Plus size={17} strokeWidth={2.4} />
+          Create talk
+        </button>
       </div>
     </header>
   );
 }
 
-function CurrentUserChip(): React.ReactElement {
+function Wordmark(): React.ReactElement {
+  return (
+    <Link href="/" aria-label="Greenroom home" className="inline-flex items-center gap-[11px]">
+      <span
+        className="h-[11px] w-[11px] flex-none rounded-full bg-primary shadow-[var(--primary-glow)]"
+        aria-hidden
+      />
+      <span className="text-[19px] font-bold tracking-[-0.02em] text-ink">
+        Green<span className="text-accent">room</span>
+      </span>
+    </Link>
+  );
+}
+
+function UserChip(): React.ReactElement {
   const { userId, setUserId } = useCurrentUser();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(userId);
@@ -36,12 +44,12 @@ function CurrentUserChip(): React.ReactElement {
   if (editing) {
     return (
       <form
+        className="flex"
         onSubmit={(e) => {
           e.preventDefault();
           setUserId(draft);
           setEditing(false);
         }}
-        className="flex items-center"
       >
         <input
           autoFocus
@@ -55,8 +63,9 @@ function CurrentUserChip(): React.ReactElement {
             if (e.key === 'Escape') setEditing(false);
           }}
           aria-label="Your attendee identifier"
-          className="h-9 w-52 rounded-md border border-edge bg-panel px-2.5 font-mono text-xs text-ink outline-none placeholder:text-faint"
           placeholder="you@example.com"
+          className="dh-input"
+          style={{ height: 40, width: 210, padding: '0 12px' }}
         />
       </form>
     );
@@ -69,16 +78,12 @@ function CurrentUserChip(): React.ReactElement {
         setEditing(true);
       }}
       aria-label={`Change attendee (currently ${userId})`}
-      title="Change who you are (auth is out of scope — a user is just an identifier)"
-      className="group flex h-9 items-center gap-1.5 rounded-md border border-line bg-panel px-2.5 font-mono text-xs text-muted transition-colors hover:border-edge hover:text-ink"
+      title="Change who you are — auth is out of scope; a user is just an identifier"
+      className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-line bg-panel px-3 text-sm text-muted transition-colors hover:border-edge"
     >
-      <span className="text-faint" aria-hidden>
-        as
-      </span>
-      <span className="text-accent">{userId}</span>
-      <span className="text-faint transition-colors group-hover:text-muted" aria-hidden>
-        ▾
-      </span>
+      <span className="text-faint">as</span>
+      <span className="text-ink">{userId}</span>
+      <Pencil size={13} className="text-faint" />
     </button>
   );
 }

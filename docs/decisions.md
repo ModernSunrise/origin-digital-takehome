@@ -23,6 +23,7 @@ links rather than restates them.
 | [004](#adr-004-no-hard-delete-of-events-in-the-mvp) | No hard-delete of events in the MVP | Accepted |
 | [005](#adr-005-http-error-mapping-taxonomy-400404409422) | HTTP error-mapping taxonomy (400/404/409/422) | Accepted |
 | [006](#adr-006-validate-at-the-boundary-with-shared-zod-schemas) | Validate at the boundary with shared Zod schemas | Accepted |
+| [007](#adr-007-reskin-to-the-origin-digital-brand-language--light-only) | Reskin to Origin Digital brand language (light-only) | Accepted |
 
 ---
 
@@ -367,3 +368,59 @@ mirroring the service-layer sharing in ADR-003.
   input too; trusting it would let malformed tool calls reach the services.
 - **A different validator per consumer.** Two schemas to keep in sync — the same
   drift problem ADR-003 exists to prevent.
+
+---
+
+## ADR-007: Reskin to the Origin Digital brand language — light-only
+
+**Status:** Accepted
+
+### Context
+
+Greenroom's original skin was a **developer-tool-dark** aesthetic — a dark IDE/terminal mood,
+monospace metadata, command-bar (`▸ new`) and `this_week()` motifs, and `SOLD OUT` / `ENDED`
+status labels. The project's thesis, recorded in [theme.md](./theme.md), is "a reusable
+events engine with a **skin** on top," which makes the skin a legitimately documented
+decision rather than an incidental style choice. A later high-fidelity design handoff
+specified a different brand language (Origin Digital): a warm light theme with a single
+earned accent. This ADR records adopting it; the full visual spec is owned by
+[theme.md](./theme.md).
+
+### Decision
+
+Replace the dark skin with **Origin Digital's brand language as a presentation-only swap**,
+scoped **light-only**:
+
+- A warm **light** theme (off-white `#F6F6F1` page, white cards, near-black `#18180F` text).
+  The dark theme and the `localStorage` theme toggle the handoff sketched were **deliberately
+  cut** — `app/globals.css` ships only the `:root` light tokens.
+- **One earned neon-lime accent** (`#C7F94E`) used as a **fill only**; accent text, icons, and
+  borders use a deep **accent-ink** green (`#4B6B0F`). Never lime text on light (contrast).
+- **Space Grotesk** (sans, tabular numerals) + **Newsreader** (serif, chapter reader only) via
+  `next/font`; **no monospace**. Icons via **lucide-react** (no text glyphs).
+- Status vocabulary **OPEN / FULL / PAST** (was OPEN / SOLD OUT / ENDED).
+- Create / edit talk moved from the `/events/new` and `/events/[id]/edit` routes into a
+  **modal**; the old routes now redirect.
+
+### Consequences
+
+- The **domain model, REST API, MCP tools, services, and the 32 tests are untouched** — an
+  entire visual-language and theme-scope change touched only presentation (`app/`,
+  `app/_components/`, `app/_content/`, `app/globals.css`). This is the strongest possible
+  evidence for the "one core, swappable skin" claim the architecture rests on
+  ([ADR-002](#adr-002-in-memory-store-is-single-instance-by-design),
+  [ADR-003](#adr-003-ship-an-mcp-server-over-the-same-domain-layer)).
+- Light-only is simpler to ship and review than a dual-theme toggle, and matches the brand.
+- The skin's content (seed talks, walkthrough chapters) and copy are presentation concerns
+  carrying no business logic.
+
+### Alternatives considered
+
+- **Keep the dark theme as an opt-in alongside light.** Rejected — light-only removes the
+  toggle and its persistence, is simpler to review, and matches the brand brief; a second
+  theme is dead weight for a take-home.
+- **Keep the route-based create/edit forms.** Rejected in favor of the lower-friction modal
+  the handoff specifies; the old routes redirect so deep links don't break.
+- **Restyle in place (swap colors only).** Rejected — the handoff changed layout, typography,
+  iconography, and vocabulary, not just the palette; a token-only remap would leave the IDE
+  structure and monospace behind.

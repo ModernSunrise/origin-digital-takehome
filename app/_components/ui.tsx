@@ -1,37 +1,25 @@
+import { BookOpen } from 'lucide-react';
 import type { TalkStatus } from './talk-utils';
 
-type ButtonVariant = 'accent' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
-/** Shared button classes — used by both <button> and next/link <Link>. */
-export function buttonStyles(variant: ButtonVariant = 'ghost', size: ButtonSize = 'md'): string {
-  const base =
-    'inline-flex items-center justify-center gap-1.5 rounded-md border font-mono font-medium tracking-tight transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45';
-  const sizes: Record<ButtonSize, string> = {
-    sm: 'h-7 px-2.5 text-xs',
-    md: 'h-9 px-3.5 text-[13px]',
-  };
-  const variants: Record<ButtonVariant, string> = {
-    accent:
-      'border-accent/30 bg-accent/15 text-accent hover:bg-accent/25 hover:border-accent/50 shadow-[0_0_0_1px_transparent]',
-    ghost: 'border-line bg-panel text-ink hover:border-edge hover:bg-raised',
-    danger: 'border-danger/30 bg-danger/10 text-danger hover:bg-danger/20 hover:border-danger/50',
-  };
-  return `${base} ${sizes[size]} ${variants[variant]}`;
+/** Shared button classes (dh-btn) — used by both <button> and next/link <Link>. */
+export function buttonStyles(variant: ButtonVariant = 'secondary', size: ButtonSize = 'md'): string {
+  return `dh-btn dh-btn--${variant} dh-btn--${size}`;
 }
 
-const STATUS: Record<TalkStatus, { label: string; cls: string }> = {
-  OPEN: { label: 'OPEN', cls: 'border-accent/40 bg-accent/10 text-accent' },
-  SOLD_OUT: { label: 'SOLD OUT', cls: 'border-danger/40 bg-danger/10 text-danger' },
-  ENDED: { label: 'ENDED', cls: 'border-line bg-transparent text-faint' },
+const STATUS: Record<TalkStatus, { mod: string; label: string }> = {
+  OPEN: { mod: 'open', label: 'Open' },
+  FULL: { mod: 'full', label: 'Full' },
+  PAST: { mod: 'past', label: 'Past' },
 };
 
 export function StatusBadge({ status }: { status: TalkStatus }): React.ReactElement {
   const s = STATUS[status];
   return (
-    <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${s.cls}`}
-    >
+    <span className={`dh-badge dh-badge--${s.mod}`}>
+      <span className="dh-badge__dot" aria-hidden />
       {s.label}
     </span>
   );
@@ -40,37 +28,64 @@ export function StatusBadge({ status }: { status: TalkStatus }): React.ReactElem
 export function CapacityMeter({
   count,
   max,
+  size = 'md',
   className = '',
 }: {
   count: number;
   max: number;
+  size?: 'md' | 'lg';
   className?: string;
 }): React.ReactElement {
   const ratio = max > 0 ? Math.min(1, count / max) : 1;
   const pct = Math.round(ratio * 100);
-  const fill = ratio >= 1 ? 'bg-danger' : ratio >= 0.8 ? 'bg-warn' : 'bg-accent';
+  const tone = ratio >= 1 ? 'var(--destructive)' : ratio >= 0.8 ? 'var(--warning)' : 'var(--primary)';
+  const full = ratio >= 1;
   return (
     <div className={className}>
-      <div className="mb-1.5 flex items-baseline justify-between font-mono text-[11px]">
-        <span className="text-faint">seats</span>
-        <span className="tabular-nums text-muted">
-          <span className={ratio >= 1 ? 'text-danger' : 'text-ink'}>{count}</span>
-          <span className="text-faint"> / {max}</span>
+      <div className="dh-meter__head">
+        <span className="dh-meter__label">Seats</span>
+        <span className="dh-meter__count" style={full ? { color: 'var(--destructive)' } : undefined}>
+          <span className="now">{count}</span>
+          <span className="of"> / {max}</span>
         </span>
       </div>
       <div
+        className="dh-meter__track"
         role="progressbar"
         aria-valuenow={count}
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={`${count} of ${max} seats taken`}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-raised"
+        style={size === 'lg' ? { height: 8 } : undefined}
       >
-        <div
-          className={`h-full origin-left rounded-full [animation:meter-grow_0.6s_cubic-bezier(0.22,1,0.36,1)_both] ${fill}`}
-          style={{ width: `${pct}%` }}
-        />
+        <div className="dh-meter__fill" style={{ width: `${pct}%`, background: tone }} />
       </div>
     </div>
+  );
+}
+
+export function Avatar({ name, me = false }: { name: string; me?: boolean }): React.ReactElement {
+  const initials =
+    name
+      .replace(/@.*$/, '')
+      .split(/[.\s_-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p.charAt(0))
+      .join('')
+      .toUpperCase() || '?';
+  return (
+    <span className={me ? 'dh-avatar dh-avatar--me' : 'dh-avatar'} title={name}>
+      {initials}
+    </span>
+  );
+}
+
+export function ChapterChip({ order }: { order: number }): React.ReactElement {
+  return (
+    <span className="dh-chip" title="This talk has a walkthrough chapter">
+      <BookOpen size={13} strokeWidth={2} />
+      Chapter {String(order).padStart(2, '0')}
+    </span>
   );
 }
