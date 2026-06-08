@@ -20,7 +20,7 @@ const serif = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: 'DevHub — tech talks worth a lunch break',
+  title: 'Greenroom — tech talks worth a lunch break',
   description: 'Schedule internal tech talks and manage seat registrations.',
 };
 

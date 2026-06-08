@@ -8,7 +8,7 @@ import { createContext, useContext, useState } from 'react';
 type CurrentUser = { userId: string; setUserId: (id: string) => void };
 
 const Ctx = createContext<CurrentUser | null>(null);
-const DEFAULT_USER = 'you@devhub.io';
+const DEFAULT_USER = 'you@greenroom.io';
 
 export function CurrentUserProvider({
   children,

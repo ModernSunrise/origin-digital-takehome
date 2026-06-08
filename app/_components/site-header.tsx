@@ -24,13 +24,13 @@ export function SiteHeader(): React.ReactElement {
 
 function Wordmark(): React.ReactElement {
   return (
-    <Link href="/" aria-label="DevHub home" className="inline-flex items-center gap-[11px]">
+    <Link href="/" aria-label="Greenroom home" className="inline-flex items-center gap-[11px]">
       <span
         className="h-[11px] w-[11px] flex-none rounded-full bg-primary shadow-[var(--primary-glow)]"
         aria-hidden
       />
       <span className="text-[19px] font-bold tracking-[-0.02em] text-ink">
-        Dev<span className="text-accent">Hub</span>
+        Green<span className="text-accent">room</span>
       </span>
     </Link>
   );

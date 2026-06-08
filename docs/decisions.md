@@ -377,7 +377,7 @@ mirroring the service-layer sharing in ADR-003.
 
 ### Context
 
-DevHub's original skin was a **developer-tool-dark** aesthetic — a dark IDE/terminal mood,
+Greenroom's original skin was a **developer-tool-dark** aesthetic — a dark IDE/terminal mood,
 monospace metadata, command-bar (`▸ new`) and `this_week()` motifs, and `SOLD OUT` / `ENDED`
 status labels. The project's thesis, recorded in [theme.md](./theme.md), is "a reusable
 events engine with a **skin** on top," which makes the skin a legitimately documented

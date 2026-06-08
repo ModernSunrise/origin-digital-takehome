@@ -18,7 +18,7 @@ Next.js (App Router) · TypeScript (`strict`) · Zod (boundary validation) · Vi
 `@modelcontextprotocol/sdk`. Single repo, **single process**, **in-memory** storage by
 design. Auth is out of scope.
 
-**Theme:** [DevHub](./docs/theme.md) — an internal tech-talk hub, reskinned in Origin
+**Theme:** [Greenroom](./docs/theme.md) — an internal tech-talk hub, reskinned in Origin
 Digital's brand language: a warm **light** theme (light-only — no dark mode or theme
 toggle), one earned neon-lime accent, Space Grotesk + Newsreader, lucide icons. A
 presentation skin over the generic events core; domain/API/tool names are unchanged.
@@ -123,7 +123,7 @@ consumers and the tables in `domain-model.md` in the same change.
 
 ## Status
 
-Context system complete, theme defined ([DevHub](./docs/theme.md)), and the application
+Context system complete, theme defined ([Greenroom](./docs/theme.md)), and the application
 **built**: the pure domain layer, the REST + MCP consumers, the 32 service tests, and the
 front-end — reskinned into Origin Digital's **light** brand language (light-only; the dark
 theme and theme toggle were dropped — see [ADR-007](./docs/decisions.md)). The root

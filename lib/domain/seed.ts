@@ -1,4 +1,4 @@
-// Demo seed for the DevHub frontend. Idempotent — only seeds an empty store. Seeded lazily
+// Demo seed for the Greenroom frontend. Idempotent — only seeds an empty store. Seeded lazily
 // via ensureSeeded() from the route handlers. Goes through the SAME services as everything
 // else (no direct store writes), so the seeded data obeys every business rule.
 //
@@ -11,7 +11,7 @@ import { register } from './registration-service';
 import { findAllEvents } from './store';
 import { now } from './clock';
 
-const DEMO_USER = 'you@devhub.io';
+const DEMO_USER = 'you@greenroom.io';
 
 function at(daysFromNow: number, hour = 12, minute = 0): string {
   const d = now();
@@ -52,7 +52,7 @@ export async function seedStore(): Promise<void> {
   const ch3 = await createEvent({
     title: 'The App — How It Meets the Requirements',
     description:
-      'A pure domain/service layer with thin handlers over an in-memory store, the three business rules, 32 tests, and this DevHub frontend.',
+      'A pure domain/service layer with thin handlers over an in-memory store, the three business rules, 32 tests, and this Greenroom frontend.',
     date: at(4, 12, 0),
     maxCapacity: 8, // small on purpose: the capacity rule is demoable live in this chapter
   });
@@ -75,16 +75,16 @@ export async function seedStore(): Promise<void> {
 
   // Realistic attendee lists on the meta chapters.
   for (const name of ['priya', 'sam', 'lee', 'mei']) {
-    await register(ch1.id, `${name}@devhub.io`);
+    await register(ch1.id, `${name}@greenroom.io`);
   }
   for (const name of ['priya', 'sam', 'noah']) {
-    await register(ch2.id, `${name}@devhub.io`);
+    await register(ch2.id, `${name}@greenroom.io`);
   }
   for (const name of ['priya', 'sam', 'lee', 'noah']) {
-    await register(ch4.id, `${name}@devhub.io`);
+    await register(ch4.id, `${name}@greenroom.io`);
   }
   for (const name of ['priya', 'noah', 'mei']) {
-    await register(ch5.id, `${name}@devhub.io`);
+    await register(ch5.id, `${name}@greenroom.io`);
   }
 
   // Chapter 3 is the live rules playground: the demo user already holds a seat (duplicate rule
@@ -93,6 +93,6 @@ export async function seedStore(): Promise<void> {
   // date to the past makes the past-event rule demoable too.
   await register(ch3.id, DEMO_USER);
   for (let i = 1; i <= 6; i += 1) {
-    await register(ch3.id, `dev${i}@devhub.io`);
+    await register(ch3.id, `dev${i}@greenroom.io`);
   }
 }

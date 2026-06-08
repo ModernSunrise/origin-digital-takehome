@@ -1,6 +1,6 @@
-# Theme — DevHub
+# Theme — Greenroom
 
-DevHub is the product **skin** over the generic Event Management core: an internal
+Greenroom is the product **skin** over the generic Event Management core: an internal
 **tech-talk & lunch-and-learn hub**. Employees browse upcoming talks and save a seat; an
 AI assistant does the same over MCP. It exists to make the architecture concrete and to
 make the MCP differentiator feel essential, not decorative.
@@ -8,18 +8,18 @@ make the MCP differentiator feel essential, not decorative.
 > **Skin depth — the core stays generic.** `Event` / `Registration`, the `/api/events`
 > routes, and the `create_event` / `register_for_event` MCP tool *names* are exactly as
 > [`../.claude/core-context/domain-model.md`](../.claude/core-context/domain-model.md)
-> defines them. DevHub themes only **presentation**: UI copy, seed data, visual design,
+> defines them. Greenroom themes only **presentation**: UI copy, seed data, visual design,
 > and MCP tool *descriptions*. Nothing in the locked specs changes — a reusable events
 > engine with a skin on top. That separation is itself a design talking point.
 
 ## Identity
 
-- **Name:** DevHub
+- **Name:** Greenroom
 - **Tagline:** _Tech talks worth a lunch break._
 - **Audience:** engineers / employees at a software org — and their AI assistant.
 - **Brand language:** Origin Digital. Warm off-white surfaces, near-black text, generous
   whitespace, one earned neon-lime accent. **Never use Origin's own logo or name** — the
-  only brand glyph is the lime seat-dot in the DevHub wordmark.
+  only brand glyph is the lime seat-dot in the Greenroom wordmark.
 
 ## Visual direction — Origin Digital light
 
@@ -95,7 +95,7 @@ seat-capacity progress, chapter markers, and key numbers — nothing else.
   text on top). That is the primary button, the wordmark seat-dot
   (`bg-primary` in `site-header.tsx`), and the capacity-meter fill under 80%.
 - Accent **TEXT, icons, and borders** must use **`--accent-ink`** (deep green `#4B6B0F`),
-  surfaced in Tailwind as `text-accent` / `border-accent-border`. The wordmark "Hub", the
+  surfaced in Tailwind as `text-accent` / `border-accent-border`. The wordmark "room", the
   "this week" stat, the OPEN badge, chapter chip, "you" chip, and success alerts all use
   accent-ink, not lime.
 - **Never set lime as text on a light background.** It fails contrast.
@@ -190,7 +190,7 @@ Standardize on **[lucide-react](https://lucide.dev)** (geometric, ~1.8px stroke,
 `currentColor`). No emoji, no multicolor icons, no text glyphs. Icons in use across the
 shipped components include `Plus`, `Pencil`, `Calendar`, `Users`, `ArrowLeft`,
 `BookOpen`, `CheckCircle`, `X`, `AlertCircle`, `Lock`, and `Inbox`. The only brand glyph
-is the lime **seat dot** in the wordmark ("Dev" + accent-ink "Hub" + the lime dot).
+is the lime **seat dot** in the wordmark ("Green" + accent-ink "room" + the lime dot).
 
 ---
 
@@ -201,7 +201,7 @@ title, description, date/time, max capacity — **no speaker field**. Voice is c
 concrete, sentence-case; no emoji; no terminal affectations. Numbers always read `X / Y`
 (tabular).
 
-| Domain (stays) | DevHub UI says |
+| Domain (stays) | Greenroom UI says |
 | --- | --- |
 | Event | talk / session |
 | `maxCapacity` | seats / capacity |

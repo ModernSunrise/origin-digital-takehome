@@ -126,14 +126,14 @@ import { registerEventTools } from './tools/events';
 import { registerRegistrationTools } from './tools/registrations';
 
 async function main(): Promise<void> {
-  const server = new McpServer({ name: 'devhub-events', version: '1.0.0' });
+  const server = new McpServer({ name: 'greenroom-events', version: '1.0.0' });
   registerEventTools(server);        // create/list/get/update event
   registerRegistrationTools(server); // register/unregister/list registrations
   const transport = new StdioServerTransport();
   await server.connect(transport);   // stdout is the protocol channel; logging -> stderr
 }
 main().catch((err) => {
-  console.error('Failed to start DevHub MCP server:', err);
+  console.error('Failed to start Greenroom MCP server:', err);
   process.exit(1);
 });
 ```
