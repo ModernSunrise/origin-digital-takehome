@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pencil, Plus } from 'lucide-react';
 import { useCurrentUser } from './current-user';
 import { useTalkForm } from './talk-form-modal';
+import { buttonStyles } from './ui';
 
 export function SiteHeader(): React.ReactElement {
   const { openCreate } = useTalkForm();
@@ -13,7 +14,7 @@ export function SiteHeader(): React.ReactElement {
       <Wordmark />
       <div className="flex items-center gap-2.5">
         <UserChip />
-        <button className="dh-btn dh-btn--primary dh-btn--md" onClick={openCreate}>
+        <button className={buttonStyles('primary', 'md')} onClick={openCreate}>
           <Plus size={17} strokeWidth={2.4} />
           Create talk
         </button>

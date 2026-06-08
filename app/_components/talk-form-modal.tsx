@@ -1,11 +1,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { mutate as globalMutate } from 'swr';
 import { AlertCircle, X } from 'lucide-react';
 import type { EventView } from '@/lib/domain/types';
 import { ApiError, api } from '@/lib/client/api';
+import { revalidateEvent, revalidateEvents } from '@/lib/client/keys';
 import { useToast } from './toast';
+import { buttonStyles } from './ui';
 import { friendlyError } from './talk-utils';
 
 type FormMode = { mode: 'create' } | { mode: 'edit'; initial: EventView };
@@ -86,11 +87,7 @@ function TalkFormModal({ form, onClose }: { form: FormMode; onClose: () => void 
           maxCapacity: cap,
           ...(date !== initialDate ? { date: new Date(date).toISOString() } : {}),
         });
-        await Promise.all([
-          globalMutate(['event', initial.id]),
-          globalMutate(['regs', initial.id]),
-          globalMutate('events'),
-        ]);
+        await revalidateEvent(initial.id);
         toast('Talk updated.', 'success');
       } else {
         await api.createEvent({
@@ -99,7 +96,7 @@ function TalkFormModal({ form, onClose }: { form: FormMode; onClose: () => void 
           date: new Date(date).toISOString(),
           maxCapacity: cap,
         });
-        await globalMutate('events');
+        await revalidateEvents();
         toast('Talk scheduled.', 'success');
       }
       onClose();
@@ -182,10 +179,10 @@ function TalkFormModal({ form, onClose }: { form: FormMode; onClose: () => void 
           </div>
 
           <div className="flex items-center gap-3 pt-1">
-            <button type="submit" className="dh-btn dh-btn--primary dh-btn--md" disabled={busy}>
+            <button type="submit" className={buttonStyles('primary', 'md')} disabled={busy}>
               {busy ? 'Saving…' : initial ? 'Save changes' : 'Schedule talk'}
             </button>
-            <button type="button" className="dh-btn dh-btn--ghost dh-btn--md" onClick={onClose}>
+            <button type="button" className={buttonStyles('ghost', 'md')} onClick={onClose}>
               Cancel
             </button>
           </div>

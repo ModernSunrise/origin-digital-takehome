@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import useSWR, { mutate as globalMutate } from 'swr';
+import useSWR from 'swr';
 import {
   AlertCircle,
   ArrowLeft,
@@ -16,12 +16,13 @@ import {
 } from 'lucide-react';
 import type { EventView, Registration } from '@/lib/domain/types';
 import { ApiError, api } from '@/lib/client/api';
+import { eventKey, regsKey, revalidateEvent } from '@/lib/client/keys';
 import { useCurrentUser } from './current-user';
 import { useToast } from './toast';
 import { useTalkForm } from './talk-form-modal';
 import { Banner } from './dashboard';
 import { Walkthrough } from './walkthrough';
-import { Avatar, CapacityMeter, ChapterChip, StatusBadge } from './ui';
+import { Avatar, buttonStyles, CapacityMeter, ChapterChip, StatusBadge } from './ui';
 import { formatWhen, friendlyError, relativeTime, talkStatus } from './talk-utils';
 import type { TalkStatus } from './talk-utils';
 import { chapterOrderFor } from '@/app/_content/talks';
@@ -32,10 +33,8 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
   const { openEdit } = useTalkForm();
   const [busy, setBusy] = useState(false);
 
-  const { data: event, error, mutate: mutateEvent } = useSWR(['event', id], () => api.getEvent(id));
-  const { data: regs, error: regsError, mutate: mutateRegs } = useSWR(['regs', id], () =>
-    api.listRegistrations(id),
-  );
+  const { data: event, error } = useSWR(eventKey(id), () => api.getEvent(id));
+  const { data: regs, error: regsError } = useSWR(regsKey(id), () => api.listRegistrations(id));
 
   if (error instanceof ApiError && error.status === 404) return <NotFound />;
   if (error || regsError) {
@@ -56,7 +55,7 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
     try {
       await run();
       toast(success, 'success');
-      await Promise.all([mutateEvent(), mutateRegs(), globalMutate('events')]);
+      await revalidateEvent(eventId);
     } catch (err) {
       toast(friendlyError(err), 'error');
     } finally {
@@ -69,7 +68,7 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
 
   return (
     <div className="mx-auto max-w-[880px]">
-      <Link href="/" className="dh-btn dh-btn--sm dh-btn--ghost mt-2" style={{ paddingInline: 0 }}>
+      <Link href="/" className={`${buttonStyles('ghost', 'sm')} mt-2`} style={{ paddingInline: 0 }}>
         <ArrowLeft size={16} />
         Talks
       </Link>
@@ -79,7 +78,7 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
       <section className="mt-9">
         <div className="flex items-center justify-between gap-3">
           <ZoneLabel n="2">Registration</ZoneLabel>
-          <button onClick={() => openEdit(event)} className="dh-btn dh-btn--sm dh-btn--secondary">
+          <button onClick={() => openEdit(event)} className={buttonStyles('secondary', 'sm')}>
             <Pencil size={14} />
             Edit talk
           </button>
@@ -245,7 +244,7 @@ function RegisterForm({
           </span>
         </div>
         <button
-          className="dh-btn dh-btn--md dh-btn--danger self-start"
+          className={`${buttonStyles('danger', 'md')} self-start`}
           disabled={busy || past}
           onClick={() => onUnregister(user)}
         >
@@ -291,7 +290,7 @@ function RegisterForm({
           placeholder="you@example.com"
           disabled={blocked}
         />
-        <button className="dh-btn dh-btn--md dh-btn--primary" disabled={blocked || busy}>
+        <button className={buttonStyles('primary', 'md')} disabled={blocked || busy}>
           <Plus size={17} strokeWidth={2.4} />
           Save my seat
         </button>
@@ -305,7 +304,7 @@ function NotFound(): React.ReactElement {
     <div className="mx-auto max-w-[880px] pt-10 text-center">
       <p className="t-h3 text-danger">Talk not found</p>
       <p className="mt-1 text-sm text-muted">It may have been removed, or the link is wrong.</p>
-      <Link href="/" className="dh-btn dh-btn--md dh-btn--secondary mt-5">
+      <Link href="/" className={`${buttonStyles('secondary', 'md')} mt-5`}>
         <ArrowLeft size={16} />
         Back to talks
       </Link>

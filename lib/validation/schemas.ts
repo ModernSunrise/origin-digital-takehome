@@ -5,14 +5,16 @@
 
 import { z } from 'zod';
 
-const userId = z.string().trim().min(1, 'userId is required');
+// Upper bounds guard the in-memory store against unbounded growth from a single request
+// (auth is out of scope, so there is no other gate). The limits are generous for the domain.
+const userId = z.string().trim().min(1, 'userId is required').max(320, 'userId is too long');
 
 /** Body of POST /api/events and input to the create_event tool. */
 export const CreateEventSchema = z.object({
-  title: z.string().trim().min(1, 'title is required'),
+  title: z.string().trim().min(1, 'title is required').max(200, 'title is too long'),
   // Optional, no default: a default would fire inside .partial() (Zod 4 semantics) and
   // silently reset description on PATCH. createEvent normalizes a missing value to "".
-  description: z.string().optional(),
+  description: z.string().max(5000, 'description is too long').optional(),
   // ISO-8601; z.iso.datetime() requires a UTC ("Z") instant by default — exactly our contract.
   date: z.iso.datetime(),
   maxCapacity: z.number().int().positive('maxCapacity must be a positive integer'),

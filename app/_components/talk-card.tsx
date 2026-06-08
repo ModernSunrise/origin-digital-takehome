@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import useSWR, { mutate as globalMutate } from 'swr';
+import useSWR from 'swr';
 import { ArrowRight, Calendar, CheckCircle, Plus } from 'lucide-react';
 import type { EventView, Registration } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
+import { regsKey, revalidateEvent } from '@/lib/client/keys';
 import { useCurrentUser } from './current-user';
 import { useToast } from './toast';
-import { CapacityMeter, ChapterChip, StatusBadge } from './ui';
+import { buttonStyles, CapacityMeter, ChapterChip, StatusBadge } from './ui';
 import { formatWhen, friendlyError, talkStatus } from './talk-utils';
 import { chapterOrderFor } from '@/app/_content/talks';
 
@@ -20,7 +21,7 @@ export function TalkCard({ event }: { event: EventView }): React.ReactElement {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
-  const { data: regs } = useSWR<Registration[]>(['regs', event.id], () =>
+  const { data: regs } = useSWR<Registration[]>(regsKey(event.id), () =>
     api.listRegistrations(event.id),
   );
   const mySeat = regs?.some((r) => r.userId === userId) ?? false;
@@ -30,7 +31,7 @@ export function TalkCard({ event }: { event: EventView }): React.ReactElement {
     try {
       await api.register(event.id, userId);
       toast(`Seat saved — see you at “${event.title}”.`, 'success');
-      await Promise.all([globalMutate(['regs', event.id]), globalMutate('events')]);
+      await revalidateEvent(event.id);
     } catch (err) {
       toast(friendlyError(err), 'error');
     } finally {
@@ -77,16 +78,16 @@ export function TalkCard({ event }: { event: EventView }): React.ReactElement {
               You’re in
             </span>
           ) : status === 'OPEN' ? (
-            <button className="dh-btn dh-btn--sm dh-btn--primary" disabled={busy} onClick={saveSeat}>
+            <button className={buttonStyles('primary', 'sm')} disabled={busy} onClick={saveSeat}>
               <Plus size={15} strokeWidth={2.4} />
               {busy ? 'Saving…' : 'Save my seat'}
             </button>
           ) : (
-            <button className="dh-btn dh-btn--sm dh-btn--secondary" disabled>
+            <button className={buttonStyles('secondary', 'sm')} disabled>
               {status === 'FULL' ? 'Full' : 'Registration closed'}
             </button>
           )}
-          <Link href={`/events/${event.id}`} className="dh-btn dh-btn--sm dh-btn--ghost ml-auto">
+          <Link href={`/events/${event.id}`} className={`${buttonStyles('ghost', 'sm')} ml-auto`}>
             Details
             <ArrowRight size={15} />
           </Link>

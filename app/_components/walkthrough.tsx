@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
 import type { EventView } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
+import { eventsKey } from '@/lib/client/keys';
 import { ORDERED_SLUGS, getTalkContent } from '@/app/_content/talks';
 import { talkFileName } from './talk-utils';
 
@@ -16,7 +17,7 @@ interface Neighbor {
 export function Walkthrough({ event }: { event: EventView }): React.ReactElement | null {
   const slug = talkFileName(event.title);
   const content = getTalkContent(slug);
-  const { data: events } = useSWR<EventView[]>('events', () => api.listEvents());
+  const { data: events } = useSWR<EventView[]>(eventsKey, () => api.listEvents());
 
   if (!content) return null;
 

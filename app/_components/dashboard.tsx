@@ -4,12 +4,14 @@ import useSWR from 'swr';
 import { AlertCircle, Inbox, Plus } from 'lucide-react';
 import type { EventView } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
+import { eventsKey } from '@/lib/client/keys';
 import { TalkCard } from './talk-card';
 import { useTalkForm } from './talk-form-modal';
+import { buttonStyles } from './ui';
 import { isUpcomingThisWeek, talkStatus } from './talk-utils';
 
 export function Dashboard(): React.ReactElement {
-  const { data: events, error, isLoading } = useSWR<EventView[]>('events', () => api.listEvents());
+  const { data: events, error, isLoading } = useSWR<EventView[]>(eventsKey, () => api.listEvents());
   const { openCreate } = useTalkForm();
 
   if (error) return <Banner message="Could not load talks — is the dev server running?" />;
@@ -146,7 +148,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }): React.ReactElement 
         Schedule the first lunch-and-learn and people can start saving seats.
       </p>
       <div className="mt-5 flex justify-center">
-        <button className="dh-btn dh-btn--md dh-btn--primary" onClick={onCreate}>
+        <button className={buttonStyles('primary', 'md')} onClick={onCreate}>
           <Plus size={17} strokeWidth={2.4} />
           Create talk
         </button>
