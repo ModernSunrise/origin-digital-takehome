@@ -120,6 +120,19 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Faint topographic-contour backdrop — a light-touch texture behind all content.
+   A fixed layer above the page color but beneath every surface (cards are opaque,
+   so it only reads in the margins). Tune the whole effect with one opacity value. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("/contour.svg") center / cover no-repeat;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* The organic-gradient motif — used ONCE per screen as subtle texture. */
 .organic-gradient {
   background-image:
