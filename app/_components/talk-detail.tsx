@@ -3,50 +3,52 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
-import type { Registration } from '@/lib/domain/types';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Lock,
+  Pencil,
+  Plus,
+  Users,
+  X,
+} from 'lucide-react';
+import type { EventView, Registration } from '@/lib/domain/types';
 import { ApiError, api } from '@/lib/client/api';
 import { useCurrentUser } from './current-user';
 import { useToast } from './toast';
+import { useTalkForm } from './talk-form-modal';
 import { Banner } from './dashboard';
-import { CapacityMeter, StatusBadge, buttonStyles } from './ui';
-import { formatWhen, friendlyError, talkFileName, talkStatus } from './talk-utils';
 import { Walkthrough } from './walkthrough';
+import { Avatar, CapacityMeter, ChapterChip, StatusBadge } from './ui';
+import { formatWhen, friendlyError, relativeTime, talkStatus } from './talk-utils';
+import type { TalkStatus } from './talk-utils';
+import { chapterOrderFor } from '@/app/_content/talks';
 
 export function TalkDetail({ id }: { id: string }): React.ReactElement {
   const { userId } = useCurrentUser();
   const toast = useToast();
+  const { openEdit } = useTalkForm();
   const [busy, setBusy] = useState(false);
 
-  const { data: event, error: eventError, mutate: mutateEvent } = useSWR(['event', id], () =>
-    api.getEvent(id),
-  );
+  const { data: event, error, mutate: mutateEvent } = useSWR(['event', id], () => api.getEvent(id));
   const { data: regs, error: regsError, mutate: mutateRegs } = useSWR(['regs', id], () =>
     api.listRegistrations(id),
   );
 
-  if (eventError instanceof ApiError && eventError.status === 404) return <NotFound />;
-  // Gate on BOTH resources so the seat control never renders against stale/empty
-  // registrations, and a failed sub-fetch is surfaced rather than shown as "0 attendees".
-  if (eventError || regsError) {
+  if (error instanceof ApiError && error.status === 404) return <NotFound />;
+  if (error || regsError) {
     return (
-      <Banner
-        glyph="✗"
-        tone="danger"
-        message="Could not load this talk."
-        action={{
-          label: 'retry',
-          onClick: () => {
-            void mutateEvent();
-            void mutateRegs();
-          },
-        }}
-      />
+      <div className="mx-auto max-w-[880px]">
+        <Banner message="Could not load this talk." />
+      </div>
     );
   }
   if (!event || !regs) return <DetailSkeleton />;
 
   const status = talkStatus(event);
-  const mySeat = regs.find((r) => r.userId === userId);
+  const mySeat = regs.some((r) => r.userId === userId);
   const eventId = event.id;
 
   async function act(run: () => Promise<unknown>, success: string): Promise<void> {
@@ -54,7 +56,6 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
     try {
       await run();
       toast(success, 'success');
-      // Revalidate this page's resources and the dashboard's list cache (seat counts).
       await Promise.all([mutateEvent(), mutateRegs(), globalMutate('events')]);
     } catch (err) {
       toast(friendlyError(err), 'error');
@@ -63,88 +64,91 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
     }
   }
 
+  const unregister = (u: string): Promise<void> =>
+    act(() => api.unregister(eventId, u), 'Seat released.');
+
   return (
-    <div className="pt-2">
-      <Link href="/" className="font-mono text-xs text-faint transition-colors hover:text-muted">
-        <span aria-hidden>←</span> ~/talks
+    <div className="mx-auto max-w-[880px]">
+      <Link href="/" className="dh-btn dh-btn--sm dh-btn--ghost mt-2" style={{ paddingInline: 0 }}>
+        <ArrowLeft size={16} />
+        Talks
       </Link>
 
-      <div className="mt-5 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-[12px] text-accent/80">{talkFileName(event.title)}</span>
-            <StatusBadge status={status} />
-          </div>
-          <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-ink">
-            {event.title}
-          </h1>
-          <p className="mt-2 font-mono text-sm text-muted">{formatWhen(event.date)}</p>
+      <Header event={event} status={status} />
 
-          {event.description ? (
-            <p className="mt-6 max-w-prose leading-relaxed text-muted">{event.description}</p>
-          ) : (
-            <p className="mt-6 font-mono text-sm text-faint">{'// no description'}</p>
-          )}
-
-          <div className="mt-10">
-            <h2
-              className="mb-3 flex items-baseline gap-2 font-mono text-sm"
-              aria-label={`Attendees — ${regs.length}`}
-            >
-              <span className="text-accent">attendees</span>
-              <span className="text-faint" aria-hidden>
-                () — {regs.length}
+      <section className="mt-9">
+        <div className="flex items-center justify-between gap-3">
+          <ZoneLabel n="2">Registration</ZoneLabel>
+          <button onClick={() => openEdit(event)} className="dh-btn dh-btn--sm dh-btn--secondary">
+            <Pencil size={14} />
+            Edit talk
+          </button>
+        </div>
+        <div className="dh-card">
+          <div className="dh-card__body">
+            <div className="mb-3.5 flex items-baseline gap-2">
+              <Users size={16} className="text-faint" />
+              <span className="font-semibold text-ink">Attendees</span>
+              <span className="num text-faint">
+                {regs.length} / {event.maxCapacity}
               </span>
-            </h2>
-            <AttendeeList regs={regs} me={userId} max={event.maxCapacity} />
+            </div>
+            <AttendeeList
+              regs={regs}
+              me={userId}
+              canManage={status !== 'PAST'}
+              busy={busy}
+              onUnregister={unregister}
+            />
+            <RegisterForm
+              status={status}
+              user={userId}
+              mySeat={mySeat}
+              busy={busy}
+              onRegister={(idf) => act(() => api.register(eventId, idf), 'Seat saved.')}
+              onUnregister={unregister}
+            />
           </div>
         </div>
-
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-lg border border-line bg-panel p-5">
-            <CapacityMeter count={event.registrationCount} max={event.maxCapacity} />
-
-            <div className="mt-5">
-              {mySeat ? (
-                <div className="space-y-3">
-                  <p className="flex items-center gap-1.5 font-mono text-xs text-accent">
-                    <span aria-hidden>✓</span> you have a seat
-                  </p>
-                  <button
-                    onClick={() => void act(() => api.unregister(eventId, userId), 'Seat released.')}
-                    disabled={busy}
-                    className={`w-full ${buttonStyles('danger', 'md')}`}
-                  >
-                    {busy ? '…' : 'give up seat'}
-                  </button>
-                </div>
-              ) : status === 'OPEN' ? (
-                <button
-                  onClick={() => void act(() => api.register(eventId, userId), 'Seat saved.')}
-                  disabled={busy}
-                  className={`w-full ${buttonStyles('accent', 'md')}`}
-                >
-                  {busy ? '…' : '+ save my seat'}
-                </button>
-              ) : (
-                <button disabled className={`w-full ${buttonStyles('ghost', 'md')}`}>
-                  {status === 'SOLD_OUT' ? 'sold out' : 'registration closed'}
-                </button>
-              )}
-            </div>
-
-            <p className="mt-3 font-mono text-[11px] leading-relaxed text-faint">
-              registering as <span className="text-muted">{userId}</span>
-            </p>
-          </div>
-
-          <Link href={`/events/${eventId}/edit`} className={`mt-3 w-full ${buttonStyles('ghost', 'md')}`}>
-            edit talk
-          </Link>
-        </aside>
-      </div>
+      </section>
 
       <Walkthrough event={event} />
+    </div>
+  );
+}
+
+function ZoneLabel({ n, children }: { n: string; children: React.ReactNode }): React.ReactElement {
+  return (
+    <div className="mb-3.5 flex items-center gap-2.5">
+      <span className="num flex h-5 w-5 items-center justify-center rounded-[6px] border border-line text-[11px] font-semibold text-faint">
+        {n}
+      </span>
+      <span className="t-label text-faint">{children}</span>
+    </div>
+  );
+}
+
+function Header({ event, status }: { event: EventView; status: TalkStatus }): React.ReactElement {
+  const chapter = chapterOrderFor(event.title);
+  return (
+    <div className="mt-[22px]">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <StatusBadge status={status} />
+        {chapter !== null ? <ChapterChip order={chapter} /> : null}
+      </div>
+      <h1 className="t-h1 mt-3.5 text-ink">{event.title}</h1>
+      <div className="mt-3 flex items-center gap-2 text-[length:var(--fs-body)] text-muted">
+        <Calendar size={16} className="text-faint" />
+        <span className="num">{formatWhen(event.date)}</span>
+        <span className="text-faint">·</span>
+        <span className="text-faint">{relativeTime(event.date)}</span>
+      </div>
+      {event.description ? (
+        <p className="t-body-lg mt-[18px] max-w-[60ch] text-ink">{event.description}</p>
+      ) : null}
+      <div className="mt-6 max-w-[420px]">
+        <CapacityMeter count={event.registrationCount} max={event.maxCapacity} size="lg" />
+      </div>
     </div>
   );
 }
@@ -152,16 +156,20 @@ export function TalkDetail({ id }: { id: string }): React.ReactElement {
 function AttendeeList({
   regs,
   me,
-  max,
+  canManage,
+  busy,
+  onUnregister,
 }: {
   regs: Registration[];
   me: string;
-  max: number;
+  canManage: boolean;
+  busy: boolean;
+  onUnregister: (userId: string) => void;
 }): React.ReactElement {
   if (regs.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-line px-4 py-6 text-center font-mono text-xs text-faint">
-        no seats taken yet — be the first
+      <p className="rounded-[var(--radius-md)] border border-dashed border-line p-[22px] text-center text-sm text-faint">
+        No seats taken yet — be the first.
       </p>
     );
   }
@@ -169,37 +177,137 @@ function AttendeeList({
     (a, b) => new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime(),
   );
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-md border border-line">
-      {sorted.map((r, i) => {
-        const isMe = r.userId === me;
-        return (
-          <li
-            key={r.id}
-            className={`flex items-center gap-3 px-4 py-2.5 font-mono text-[13px] ${isMe ? 'bg-accent/5' : ''}`}
+    <ul className="m-0 max-h-[300px] list-none overflow-y-auto rounded-[var(--radius-md)] border border-line p-0">
+      {sorted.map((r) => (
+        <li
+          key={r.id}
+          className="group flex items-center gap-3 border-b border-line px-3.5 py-2.5 last:border-b-0"
+          style={r.userId === me ? { background: 'var(--accent-subtle)' } : undefined}
+        >
+          <Avatar name={r.userId} me={r.userId === me} />
+          <span
+            className="text-sm"
+            style={{ color: r.userId === me ? 'var(--accent-ink)' : 'var(--foreground)' }}
           >
-            <span className="w-8 tabular-nums text-faint">{String(i + 1).padStart(2, '0')}</span>
-            <span className={isMe ? 'text-accent' : 'text-ink'}>{r.userId}</span>
-            {isMe && (
-              <span className="rounded border border-accent/40 px-1 text-[10px] text-accent">you</span>
-            )}
-            <span className="ml-auto text-muted">{formatWhen(r.registeredAt)}</span>
-          </li>
-        );
-      })}
-      <li className="px-4 py-2 font-mono text-[11px] text-muted">
-        {regs.length} / {max} seats taken
-      </li>
+            {r.userId}
+          </span>
+          {r.userId === me ? (
+            <span className="dh-chip" style={{ height: 18 }}>
+              you
+            </span>
+          ) : null}
+          <span className="num ml-auto text-[length:var(--fs-xs)] text-faint">
+            {formatWhen(r.registeredAt)}
+          </span>
+          {canManage ? (
+            <button
+              className={`dh-iconbtn group-hover:opacity-100 ${r.userId === me ? '' : 'opacity-0'} transition-opacity`}
+              style={{ width: 28, height: 28 }}
+              disabled={busy}
+              onClick={() => onUnregister(r.userId)}
+              title={`Unregister ${r.userId}`}
+            >
+              <X size={15} />
+            </button>
+          ) : null}
+        </li>
+      ))}
     </ul>
+  );
+}
+
+function RegisterForm({
+  status,
+  user,
+  mySeat,
+  busy,
+  onRegister,
+  onUnregister,
+}: {
+  status: TalkStatus;
+  user: string;
+  mySeat: boolean;
+  busy: boolean;
+  onRegister: (identifier: string) => void;
+  onUnregister: (userId: string) => void;
+}): React.ReactElement {
+  const [identifier, setIdentifier] = useState(user);
+  const past = status === 'PAST';
+  const full = status === 'FULL';
+
+  if (mySeat) {
+    return (
+      <div className="mt-[18px] flex flex-col gap-3">
+        <div className="dh-alert dh-alert--success">
+          <CheckCircle size={18} className="dh-alert__icon" />
+          <span>
+            You have a seat for this talk — registered as <strong>{user}</strong>.
+          </span>
+        </div>
+        <button
+          className="dh-btn dh-btn--md dh-btn--danger self-start"
+          disabled={busy || past}
+          onClick={() => onUnregister(user)}
+        >
+          Give up seat
+        </button>
+      </div>
+    );
+  }
+
+  const blocked = past || full;
+  return (
+    <form
+      className="mt-[18px]"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!blocked) onRegister(identifier.trim() || user);
+      }}
+    >
+      {blocked ? (
+        <div className={`dh-alert mb-3.5 ${past ? 'dh-alert--neutral' : 'dh-alert--danger'}`}>
+          {past ? (
+            <Lock size={18} className="dh-alert__icon" />
+          ) : (
+            <AlertCircle size={18} className="dh-alert__icon" />
+          )}
+          <span>
+            {past
+              ? 'This talk has already started — registration is closed.'
+              : 'This talk is sold out. Seats free up if an attendee gives theirs up.'}
+          </span>
+        </div>
+      ) : null}
+      <label htmlFor="reg-id" className="dh-field__label">
+        <span className="dh-field__name">Your identifier</span>
+        <span className="dh-field__hint">email or name · no sign-in needed</span>
+      </label>
+      <div className="flex gap-2.5">
+        <input
+          id="reg-id"
+          className="dh-input flex-1"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder="you@example.com"
+          disabled={blocked}
+        />
+        <button className="dh-btn dh-btn--md dh-btn--primary" disabled={blocked || busy}>
+          <Plus size={17} strokeWidth={2.4} />
+          Save my seat
+        </button>
+      </div>
+    </form>
   );
 }
 
 function NotFound(): React.ReactElement {
   return (
-    <div className="pt-10 text-center">
-      <p className="font-mono text-sm text-danger">404 — talk not found</p>
+    <div className="mx-auto max-w-[880px] pt-10 text-center">
+      <p className="t-h3 text-danger">Talk not found</p>
       <p className="mt-1 text-sm text-muted">It may have been removed, or the link is wrong.</p>
-      <Link href="/" className={`mt-5 ${buttonStyles('ghost', 'md')}`}>
-        <span aria-hidden>←</span> back to talks
+      <Link href="/" className="dh-btn dh-btn--md dh-btn--secondary mt-5">
+        <ArrowLeft size={16} />
+        Back to talks
       </Link>
     </div>
   );
@@ -207,13 +315,10 @@ function NotFound(): React.ReactElement {
 
 function DetailSkeleton(): React.ReactElement {
   return (
-    <div className="grid grid-cols-1 gap-8 pt-6 lg:grid-cols-[1fr_300px]">
-      <div className="space-y-4">
-        <div className="h-8 w-2/3 animate-pulse rounded bg-panel" />
-        <div className="h-4 w-40 animate-pulse rounded bg-panel" />
-        <div className="h-24 w-full animate-pulse rounded bg-panel" />
-      </div>
-      <div className="h-44 animate-pulse rounded-lg border border-line bg-panel" />
+    <div className="mx-auto max-w-[880px] pt-6">
+      <div className="h-9 w-2/3 rounded bg-panel" />
+      <div className="mt-3 h-4 w-40 rounded bg-panel" />
+      <div className="mt-6 h-44 rounded-[var(--radius-lg)] border border-line bg-panel" />
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
 export interface TalkContent {
   readonly slug: string;
   readonly order: number;
+  readonly heading: string;
   readonly render: () => ReactElement;
 }
 
@@ -29,9 +30,15 @@ export interface TalkContent {
 // turned into the content lookup slug via talkFileName(). Keep them byte-identical to the
 // seed titles, or a chapter's walkthrough silently won't render. (Deliberate: content is a
 // presentation concern keyed by slug; the domain model stays untouched.)
-const CHAPTERS: readonly { title: string; order: number; render: () => ReactElement }[] = [
+const CHAPTERS: readonly {
+  title: string;
+  heading: string;
+  order: number;
+  render: () => ReactElement;
+}[] = [
   {
     title: 'How I Began — My Workflow',
+    heading: 'How I began',
     order: 1,
     render: () => (
       <ContentSection name="the_workflow">
@@ -86,6 +93,7 @@ const CHAPTERS: readonly { title: string; order: number; render: () => ReactElem
   },
   {
     title: 'My Context System — Design & Methodology',
+    heading: 'The context system',
     order: 2,
     render: () => (
       <ContentSection name="the_context_system">
@@ -132,6 +140,7 @@ const CHAPTERS: readonly { title: string; order: number; render: () => ReactElem
   },
   {
     title: 'The App — How It Meets the Requirements',
+    heading: 'The app',
     order: 3,
     render: () => (
       <ContentSection name="the_app">
@@ -179,6 +188,7 @@ const CHAPTERS: readonly { title: string; order: number; render: () => ReactElem
   },
   {
     title: 'The MCP Server Layer',
+    heading: 'The MCP layer',
     order: 4,
     render: () => (
       <ContentSection name="the_mcp_layer">
@@ -214,6 +224,7 @@ npx @modelcontextprotocol/inspector npm run mcp   # inspect it interactively`}</
   },
   {
     title: 'Where It Goes Next — Production & Roadmap',
+    heading: 'Where it goes next',
     order: 5,
     render: () => (
       <ContentSection name="where_it_goes_next">
@@ -306,7 +317,7 @@ npx @modelcontextprotocol/inspector npm run mcp   # inspect it interactively`}</
 export const TALK_CONTENT: Readonly<Record<string, TalkContent>> = Object.fromEntries(
   CHAPTERS.map((c): [string, TalkContent] => {
     const slug = talkFileName(c.title);
-    return [slug, { slug, order: c.order, render: c.render }];
+    return [slug, { slug, order: c.order, heading: c.heading, render: c.render }];
   }),
 );
 
